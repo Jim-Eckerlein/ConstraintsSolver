@@ -43,6 +43,14 @@ class Geometry {
             vertices[i].position = function(vertices[i].position)
         }
     }
+    
+    func triangles() -> [Triangle] {
+        var triangles: [Triangle] = []
+        for i in stride(from: 0, to: vertices.count, by: 3) {
+            triangles.append(Triangle(vertices[i].position, vertices[i + 1].position, vertices[i + 2].position))
+        }
+        return triangles
+    }
 }
 
 /// A type soley for the purpose of pushing vertices into a geometry.
