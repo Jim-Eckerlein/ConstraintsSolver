@@ -66,19 +66,68 @@ func rayTriangleIntersection(origin: simd_float3, ray: simd_float3, triangle: Tr
     }
 }
 
+struct LineSegment {
+    let from: simd_float3
+    let to: simd_float3
+    
+    var segment: simd_float3 {
+        get {
+            return to - from
+        }
+    }
+}
+
+/// Compute the intersection of the given triangles if intersect in a non-degenerate line segment.
+func triangleIntersection(_ a: Triangle, _ b: Triangle) -> LineSegment? {
+    fatalError()
+}
+
+struct IntersectionDomain {
+    let inside: Bool
+    let subMesh: [Triangle]
+    let seams: [Triangle]
+    
+    func depth(along direction: simd_float3, from origin: simd_float3) -> Float {
+        var depth = -Float.infinity
+        for triangle in subMesh {
+            let t0 = dot(direction, triangle.points.0 - origin)
+            let t1 = dot(direction, triangle.points.1 - origin)
+            let t2 = dot(direction, triangle.points.2 - origin)
+            depth = max(depth, max(t0, max(t1, t2)))
+        }
+        return depth
+    }
+}
+
+struct IntersectionSeam {
+    let segments: [(Triangle, LineSegment)]
+}
+
 extension Geometry {
+    
+    func intersect(with other: Geometry) {
+//        let otherTriangles = other.triangles()
+        
+//        for t1 in triangles() {
+//            for t2 in other.triangles() {
+//                if let intersectingLineSegment = triangleIntersection(t1, t2) {
+//                    
+//                }
+//            }
+//        }
+    }
     
     /// Tests if the given point lies inside the geometry's volume.
 //    func isInside(point: simd_float3) {
 //        let ray = simd_float3.random(in: 0...1)
 //        var
-//        
+//
 //        // Count triangles which intersect with the ray.
 //        for triangle in triangles() {
 //            if let intersection = rayTriangleIntersection(origin: point, ray: ray, triangle: triangle) {
 //                if dot(triangle.normal, ray) > 0 {
 //                    // The triangle normal has a similar direction as the ray, so it exits the volume at the intersection point.
-//                    
+//
 //                }
 //            }
 //        }
