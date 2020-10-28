@@ -27,6 +27,7 @@ class Renderer: NSObject, MTKViewDelegate {
     
     var vertexBuffer: MTLBuffer
     var vertices: UnsafeMutablePointer<Vertex>
+    var grid: Geometry
     
     var currentVertexCount = 0
     static let maximalVertexCount = 1024
@@ -66,6 +67,34 @@ class Renderer: NSObject, MTKViewDelegate {
         
         vertexBuffer = device.makeBuffer(length: Renderer.maximalVertexCount * MemoryLayout<Vertex>.stride, options: .cpuCacheModeWriteCombined)!
         vertices = vertexBuffer.contents().bindMemory(to: Vertex.self, capacity: Renderer.maximalVertexCount)
+        
+        let gridSideLength = 20
+        let gridVertexCount = (gridSideLength + 1) * 4
+        grid = Geometry(name: "Grid", vertices: UnsafeMutableBufferPointer(start: vertices, count: gridVertexCount))
+        currentVertexCount += gridVertexCount
+        
+        for i in 0...gridSideLength {
+            let fixed = Float(gridSideLength / 2)
+            let offset = Float(i - gridSideLength / 2)
+            
+            grid[4 * i].position.x = offset
+            grid[4 * i].position.y = fixed
+            grid[4 * i].color = Color.white.rgb
+            grid[4 * i].normal = .e3
+            grid[4 * i + 1].position.x = offset
+            grid[4 * i + 1].position.y = -fixed
+            grid[4 * i + 1].color = Color.white.rgb
+            grid[4 * i + 1].normal = .e3
+            
+            grid[4 * i + 2].position.x = fixed
+            grid[4 * i + 2].position.y = offset
+            grid[4 * i + 2].color = Color.white.rgb
+            grid[4 * i + 2].normal = .e3
+            grid[4 * i + 3].position.x = -fixed
+            grid[4 * i + 3].position.y = offset
+            grid[4 * i + 3].color = Color.white.rgb
+            grid[4 * i + 3].normal = .e3
+        }
         
         super.init()
     }
@@ -107,6 +136,15 @@ class Renderer: NSObject, MTKViewDelegate {
         )
         
         renderEncoder.pushDebugGroup("Draw Geometries")
+        
+        renderEncoder.pushDebugGroup("Draw Grid")
+        
+        renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: Int(BufferIndexUniforms))
+        renderEncoder.setFragmentBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: Int(BufferIndexUniforms))
+
+        renderEncoder.drawPrimitives(type: .line, vertexStart: 0, vertexCount: grid.vertices.count)
+        
+        renderEncoder.popDebugGroup()
         
         for geometry in geometries {
             renderEncoder.pushDebugGroup("Draw Geometry '\(geometry.name)'")
