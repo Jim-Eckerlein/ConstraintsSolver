@@ -7,6 +7,14 @@
 
 import Foundation
 
+infix operator ~=: ComparisonPrecedence
+
+func ~=(_ x1: simd_float3, _ x2: simd_float3) -> Bool {
+    let epsilon: Float = 0.0001
+    let difference = abs(x1 - x2)
+    return difference.x < epsilon && difference.y < epsilon && difference.z < epsilon
+}
+
 struct Triangle {
     let points: (simd_float3, simd_float3, simd_float3)
     let normal: simd_float3
@@ -77,8 +85,26 @@ struct LineSegment {
     }
 }
 
+enum TriangleEdge {
+    case left
+    case right
+    case bottom
+}
+
+/// Possible outcomes of a triangle-triangle intersection test.
+/// Degenerate cases are not considered.
+enum TriangleIntersection {
+    case contained
+    case extendingBeyondLeftEdge(TriangleEdge)
+    case extendingBeyondBottomEdge(TriangleEdge)
+    case extendingBeyondRightEdge(TriangleEdge)
+    case extentingAcrossLeftBottomEdges
+    case extentingAcrossLeftRightEdges
+    case extentingAcrossBottomRightEdges
+}
+
 /// Compute the intersection of the given triangles if intersect in a non-degenerate line segment.
-func triangleIntersection(_ a: Triangle, _ b: Triangle) -> LineSegment? {
+func triangleIntersection(_ a: Triangle, _ b: Triangle) -> (TriangleIntersection, LineSegment)? {
     fatalError()
 }
 
@@ -100,21 +126,105 @@ struct IntersectionDomain {
 }
 
 struct IntersectionSeam {
-    let segments: [(Triangle, LineSegment)]
+    var segments: [(Triangle, LineSegment, Triangle)]
 }
 
 extension Geometry {
     
-    func intersect(with other: Geometry) {
-//        let otherTriangles = other.triangles()
+    func adjacentTriangle(of triangle: Triangle, edge: TriangleEdge) -> Triangle {
+        let a: simd_float3
+        let b: simd_float3
         
-//        for t1 in triangles() {
-//            for t2 in other.triangles() {
-//                if let intersectingLineSegment = triangleIntersection(t1, t2) {
-//                    
+        switch edge {
+        case .left:
+            a = triangle.points.0
+            b = triangle.points.1
+        case .bottom:
+            a = triangle.points.1
+            b = triangle.points.2
+        case .right:
+            a = triangle.points.2
+            b = triangle.points.0
+        }
+        
+        for t in triangles() {
+            if (a ~= t.points.1 && b ~= t.points.0) ||
+                (a ~= t.points.2 && b ~= t.points.1) ||
+                (a ~= t.points.0 && b ~= t.points.2) {
+                return t
+            }
+        }
+        
+        fatalError("Mesh not closed")
+    }
+    
+    func expandSeam(otherGeometry: Geometry, t1 initialT1: Triangle, t2 initialT2: Triangle) -> IntersectionSeam {
+        var seam = IntersectionSeam(segments: [])
+        
+        var ownTriangle = initialT1
+        var otherTriangle = initialT2
+        
+        while let (intersection, segment) = triangleIntersection(ownTriangle, otherTriangle) {
+            seam.segments.append((ownTriangle, segment, otherTriangle))
+            
+            switch intersection {
+            
+            case .extendingBeyondRightEdge(let penetratingEdge):
+                otherTriangle = otherGeometry.adjacentTriangle(of: otherTriangle, edge: penetratingEdge)
+            
+            case .extendingBeyondLeftEdge(let otherPenetratingEdge):
+                ownTriangle = adjacentTriangle(of: ownTriangle, edge: .left)
+                
+            case .extendingBeyondBottomEdge:
+                otherTriangle = otherGeometry.adjacentTriangle(of: otherTriangle, edge: 0)
+                
+//            case .containing:
+//                otherTriangle =
+            
+            default:
+                fatalError()
+            }
+        }
+        
+        
+    }
+    
+    func intersect(with otherGeometry: Geometry) {
+        let otherTriangles = otherGeometry.triangles()
+
+        for ownTriangle in triangles() {
+            for otherTriangle in otherGeometry.triangles() {
+                if let (intersection, segment) = triangleIntersection(ownTriangle, otherTriangle) {
+                    switch intersection {
+                    case .extendingBeyondLeftEdge(let edge) {
+                        
+                    }
+                    default:
+                        fatalError()
+                    }
+                }
+                
+//                switch triangleIntersection(t1, t2) {
+//                case .none:
+//                    continue
+//                //                case let .containing(lineSegment):
+//                //                    <#code#>
+//                case let .extendingBeyondLeftEdge(lineSegment):
+//                    // Follow seam to left edge.
+//                    let nextTriangle = adjacentTriangle(of: t1, edge: 0)
+//                    expandSeam(otherGeometry: otherGeometry, t1: nextTriangle, t2: t2)
+//
+////                    let nextIntersection = triangleIntersection(nextTriangle, t2)
+//
+//                //                case let .extendingBeyondEdge1(lineSegment):
+//                //                    <#code#>
+//                //                case let .extendingBeyondEdge2(lineSegment):
+//                //                    <#code#>
+//                default:
+//                    fatalError()
 //                }
-//            }
-//        }
+            }
+        }
     }
     
     /// Tests if the given point lies inside the geometry's volume.
