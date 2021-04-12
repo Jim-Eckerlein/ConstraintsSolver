@@ -24,25 +24,29 @@ class World {
         cubeMesh2.map { $0 - simd_float3(0.5, 0.5, 0.5) }
         renderer.registerMesh(cubeMesh2)
         
-        cube1 = Rigid(collider: .box(BoxCollider()), mass: 1)
-        cube1.frame.quaternion = Quaternion(by: .pi / 8, around: .ey + 0.5 * .ex)
-        cube1.frame.position = Point(0, -2, 4)
-        cube1.externalForce = -9.81 * .ez
-        cube1.angularVelocity = Point(1, 2, 0.1)
-        cube1.velocity = 4 * .ey
+        cube1 = Rigid(collider: .box(BoxCollider()), mass: nil)
+//        cube1.frame.quaternion = Quaternion(by: .pi / 8, around: .ey + 0.5 * .ex)
+//        cube1.frame.position = Point(0, -2, 4)
+//        cube1.externalForce = -9.81 * .ez
+//        cube1.angularVelocity = Point(1, 2, 0.1)
+//        cube1.velocity = 4 * .ey
         
         cube2 = Rigid(collider: .box(BoxCollider()), mass: 2)
-        cube2.frame.position = Point(1, 1, 3)
-        cube2.frame.quaternion = Quaternion(by: .pi / 8, around: .ey + 0.25 * .ex)
-        cube2.externalForce = -9.81 * .ez
-        cube2.angularVelocity = Point(1, 2, 0.1)
-        cube2.velocity = -2 * .ex
+//        cube2.frame.position = Point(1, 1, 3)
+//        cube2.frame.quaternion = Quaternion(by: .pi / 8, around: .ey + 0.25 * .ex)
+//        cube2.externalForce = -1 * .ez
+//        cube2.angularVelocity = Point(1, 2, 0.1)
+//        cube2.velocity = -2 * .ex
+        cube2.frame.quaternion = Quaternion(by: .pi / 4, around: .ey) * Quaternion(by: .pi / 4, around: .ex)
+        cube2.frame.position = Point(0, 0, 1.2)
+        
+        integrator.integrate([cube1, cube2], by: 1)
         
         ground = Rigid(collider: .plane(Plane(direction: .ez, offset: 0)), mass: nil)
     }
     
     func integrate(dt: Double) {
-        integrator.integrate([cube1, cube2, ground], by: dt)
+//        integrator.integrate([cube1, cube2], by: dt)
         cubeMesh1.transform = cube1.frame.matrix
         cubeMesh2.transform = cube2.frame.matrix
     }
